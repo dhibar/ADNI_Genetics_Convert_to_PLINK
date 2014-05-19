@@ -1,0 +1,65 @@
+########
+# Version 1.0 - Updated May 19, 2014
+# Derrek Paul Hibar (derrek.hibar@ini.usc.edu)
+#
+# The following is a set of instructions for converting raw genotype outputs 
+# from BeadStudio CSV files to PLINK format.
+#
+# The script is designed to work with CSV output from BeadStudio specifically from the ADNI1 dataset
+# Commands use the following programs:
+# R
+# PLINK
+# awk
+# sed
+#
+# It is assumed that you are working in a Linux Bash environment
+########
+
+
+#Download and unzip CSV files all into one directory
+#From within that directory do the following:
+
+#####################
+## Convert the CSV files into an LGEN formatted file
+
+#Need 3 files, .lgen, .fam, and .map files
+#.fam file needs to be created separately!
+#FID, IID, MotherID, FatherID, Sex, Phenotype
+
+ls *.csv > tmp.txt
+sed 's/\.csv//g' tmp.txt > tmp2.txt
+awk '{print $1, $1, 0, 0, 0, 0 }' tmp2.txt > HNPGenotypes.fam
+
+
+#Create the .lgen file
+#FID, IID, SNPID, Allele1, Allele2
+#Filter out SNPs with GC score below 0.15
+
+for file in $(ls *.csv); do
+    basefile=`basename ${file} .csv`
+	awk 'BEGIN {FS=",";} {if (NR > 1 && $3 !~ "NaN" && $3 > 0.15) print $2,$2,$5,$6,$7 }' ${file} > ${basefile}.lgen
+	echo ${file}
+done
+
+cat *.lgen > HNPGenotypes.lgenx
+#rm *.lgen
+mv HNPGenotypes.lgenx HNPGenotypes.lgen
+
+#Create the .map file
+#CHR,SNPID,0,BP
+
+firstfile=`ls *.csv | awk '{if (NR==1) print $1}'`
+awk 'BEGIN {FS=",";} NR > 1{print $12,$5,0,$13}' ${firstfile} > HNPGenotypes.map
+
+# Convert to PLINK format
+plink --lfile HNPGenotypes --make-bed --out ADNI1_Genotypes_Unfilt_tmp --allow-no-sex --noweb
+
+# Download the Diagnosis and Sex information
+
+# Update the PLINK file to include sex
+plink --bfile ADNI1_Genotypes_Unfilt_tmp --update-sex adni_sex.txt --noweb --make-bed --out ADNI1_Genotypes_Unfilt_tmp2
+
+# Update the PLINK file to include the diagnosis
+plink --bfile ADNI1_Genotypes_Unfilt_tmp2 --pheno adni_diagnosis.txt --noweb --make-bed --out ADNI1_Genotypes_Unfilt
+
+#####################
