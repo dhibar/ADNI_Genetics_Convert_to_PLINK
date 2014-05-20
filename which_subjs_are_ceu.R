@@ -31,6 +31,8 @@ my_out=my_sample[which(dists < 0.03),]
 
 my_out=rbind(my_out,the_pops)
 
+write.table(my_out[,1:2], file="ceu_only.txt",quote=F, row.names=F, col.names=F)
+
 jpeg("mdsplot_ceu_only.jpg", width = 8.5, height = 11, units = "in", bg = "white" , res=150, quality=100)
 
 	
