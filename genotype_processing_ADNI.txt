@@ -49,6 +49,7 @@ mv HNPGenotypes.lgenx HNPGenotypes.lgen
 #CHR,SNPID,0,BP
 
 firstfile=`ls *.csv | awk '{if (NR==1) print $1}'`
+#might need to change the next step to be $14,$5,0,$15
 awk 'BEGIN {FS=",";} NR > 1{print $12,$5,0,$13}' ${firstfile} > HNPGenotypes.map
 
 # Convert to PLINK format
